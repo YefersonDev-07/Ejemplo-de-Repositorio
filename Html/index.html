@@ -1,0 +1,367 @@
+<!-- ============================================================
+  "Player Card — Hero Pixel Edition"
+  Mismo héroe genérico de antes, pero ahora como sprite pixel art
+  de verdad: se dibuja en un <canvas> pixel por pixel y cambia de
+  frame (no interpola) entre 4 poses, como un sprite de videojuego
+  retro clásico.
+
+  IMPORTANTE PARA NOTION: aloja este archivo (Netlify Drop, GitHub
+  Pages o CodePen) y luego en Notion usa "/embed" + el link.
+
+  Personaliza tus datos (nombre, nivel, stats) en el bloque <script>.
+============================================================= -->
+<div id="hp-root">
+  <div class="hp-card">
+    <div class="hp-left">
+      <div class="hp-name-row">
+        <div class="hp-name" id="hp-name">ALEX</div>
+        <div class="hp-level">LV <span id="hp-level">12</span></div>
+      </div>
+
+      <div class="hp-xp-wrap">
+        <div class="hp-xp-label"><span>XP</span><span id="hp-xp-text">340/500</span></div>
+        <div class="hp-bar-outer"><div class="hp-bar-inner" id="hp-xp-fill"></div></div>
+      </div>
+
+      <div class="hp-stats" id="hp-stats"></div>
+    </div>
+
+    <div class="hp-right">
+      <div class="hp-frame">
+        <div class="hp-frame-corner tl"></div>
+        <div class="hp-frame-corner tr"></div>
+        <div class="hp-frame-corner bl"></div>
+        <div class="hp-frame-corner br"></div>
+        <canvas id="hp-canvas" width="18" height="22"></canvas>
+      </div>
+      <div class="hp-blockshadow"></div>
+      <div class="hp-title" id="hp-title">★ APRENDIZ ★</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #hp-root {
+    --hp-bg: #0d0d1a;
+    --hp-panel: #14142b;
+    --hp-green: #39ff88;
+    --hp-pink: #ff4fa3;
+    --hp-yellow: #ffd23f;
+    --hp-cyan: #38e8ff;
+    --hp-text: #eaeaff;
+    --hp-text-dim: #7a7aa8;
+    font-family: 'Courier New', 'Consolas', monospace;
+    display: flex;
+    justify-content: center;
+    padding: 16px 10px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+  #hp-root *, #hp-root *::before, #hp-root *::after { box-sizing: border-box; }
+
+  .hp-card {
+    width: 100%;
+    max-width: 620px;
+    background: var(--hp-panel);
+    border: 4px solid var(--hp-green);
+    box-shadow:
+      0 0 0 4px var(--hp-bg),
+      0 0 0 8px var(--hp-green),
+      8px 8px 0 8px rgba(0,0,0,0.5);
+    padding: 22px;
+    display: flex;
+    gap: 20px;
+    color: var(--hp-text);
+  }
+
+  .hp-left { flex: 1.4; min-width: 0; }
+  .hp-right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .hp-name-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .hp-name {
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: var(--hp-yellow);
+    text-shadow: 2px 2px 0 rgba(0,0,0,0.5);
+  }
+  .hp-level {
+    background: var(--hp-pink);
+    color: #0d0d1a;
+    font-weight: 800;
+    font-size: 12px;
+    padding: 4px 8px;
+    letter-spacing: 1px;
+  }
+
+  .hp-xp-wrap { margin-bottom: 20px; }
+  .hp-xp-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--hp-text-dim);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+  }
+  .hp-bar-outer {
+    height: 14px;
+    background: #06060f;
+    border: 2px solid #2a2a4a;
+    padding: 2px;
+  }
+  .hp-bar-inner {
+    height: 100%;
+    width: 0%;
+    background-image: repeating-linear-gradient(
+      90deg,
+      var(--hp-yellow) 0px, var(--hp-yellow) 6px,
+      #ffb100 6px, #ffb100 8px
+    );
+    transition: width 1s steps(12);
+  }
+
+  .hp-stats { display: flex; flex-direction: column; gap: 12px; }
+  .hp-stat-row { display: flex; align-items: center; gap: 8px; }
+  .hp-stat-icon { font-size: 14px; width: 18px; text-align: center; }
+  .hp-stat-name {
+    width: 88px;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--hp-text-dim);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .hp-stat-bar-outer {
+    flex: 1;
+    height: 10px;
+    background: #06060f;
+    border: 2px solid #2a2a4a;
+    padding: 1px;
+  }
+  .hp-stat-bar-inner {
+    height: 100%;
+    width: 0%;
+    transition: width 0.9s steps(10);
+  }
+  .hp-stat-value {
+    width: 28px;
+    text-align: right;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  /* --- Hero pixel sprite --- */
+  .hp-frame {
+    position: relative;
+    width: 180px;
+    height: 220px;
+    background: #06060f;
+    border: 4px solid var(--hp-cyan);
+    animation: hp-glow 1.6s steps(2) infinite;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 22px rgba(56,232,255,0.25);
+  }
+  @keyframes hp-glow {
+    0% { border-color: var(--hp-cyan); }
+    50% { border-color: var(--hp-pink); }
+    100% { border-color: var(--hp-cyan); }
+  }
+  #hp-canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  .hp-frame-corner {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--hp-yellow);
+    z-index: 2;
+  }
+  .hp-frame-corner.tl { top: -4px; left: -4px; }
+  .hp-frame-corner.tr { top: -4px; right: -4px; }
+  .hp-frame-corner.bl { bottom: -4px; left: -4px; }
+  .hp-frame-corner.br { bottom: -4px; right: -4px; }
+
+  .hp-blockshadow {
+    width: 60px;
+    height: 8px;
+    background: #000;
+    opacity: 0.4;
+  }
+
+  .hp-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--hp-green);
+    letter-spacing: 1px;
+    text-align: center;
+  }
+
+  @media (max-width: 480px) {
+    .hp-card { flex-direction: column; align-items: stretch; }
+    .hp-right { order: -1; }
+  }
+</style>
+
+<script>
+(function () {
+  var root = document.getElementById('hp-root');
+
+  // -------- EDITA AQUÍ TUS DATOS --------
+  var PLAYER = {
+    name: "ALEX",
+    level: 12,
+    xpCurrent: 340,
+    xpMax: 500,
+    title: "★ APRENDIZ ★"
+  };
+
+  var STATS = [
+    { icon: "💪", name: "Fuerza",      value: 72, color: "#ff4f4f" },
+    { icon: "🧠", name: "Mente",       value: 85, color: "#38e8ff" },
+    { icon: "🗣️", name: "Carisma",     value: 60, color: "#ff4fa3" },
+    { icon: "🎯", name: "Disciplina",  value: 90, color: "#ffd23f" },
+    { icon: "❤️", name: "Salud",       value: 78, color: "#39ff88" },
+    { icon: "🎨", name: "Creatividad", value: 65, color: "#b26bff" }
+  ];
+  // ---------------------------------------
+
+  root.querySelector('#hp-name').textContent = PLAYER.name;
+  root.querySelector('#hp-level').textContent = PLAYER.level;
+  root.querySelector('#hp-title').textContent = PLAYER.title;
+  root.querySelector('#hp-xp-text').textContent = PLAYER.xpCurrent + '/' + PLAYER.xpMax;
+
+  var statsWrap = root.querySelector('#hp-stats');
+  STATS.forEach(function (s) {
+    var row = document.createElement('div');
+    row.className = 'hp-stat-row';
+    row.innerHTML =
+      '<div class="hp-stat-icon">' + s.icon + '</div>' +
+      '<div class="hp-stat-name">' + s.name + '</div>' +
+      '<div class="hp-stat-bar-outer"><div class="hp-stat-bar-inner" style="background:' + s.color + '"></div></div>' +
+      '<div class="hp-stat-value">' + s.value + '</div>';
+    statsWrap.appendChild(row);
+    var fill = row.querySelector('.hp-stat-bar-inner');
+    setTimeout(function () { fill.style.width = s.value + '%'; }, 150);
+  });
+
+  setTimeout(function () {
+    var pct = Math.min(100, (PLAYER.xpCurrent / PLAYER.xpMax) * 100);
+    root.querySelector('#hp-xp-fill').style.width = pct + '%';
+  }, 150);
+
+  // ===================== PIXEL SPRITE =====================
+  var PAL = {
+    H:  '#101014', // cabello
+    S:  '#d99566', // piel
+    M:  '#e63946', // antifaz
+    E:  '#4cf3ff', // ojos brillantes
+    B:  '#1c3fae', // traje
+    B2: '#274bd6', // traje highlight
+    D:  '#0d1a4a', // traje sombra / brazo trasero
+    K:  '#0a1230', // botas / cinturon
+    Y:  '#ffd23f', // emblema
+    C:  '#c81f2e', // capa
+    C2: '#9c1622', // capa sombra
+    P:  '#e8ecff'  // hombreras metalicas
+  };
+
+  var STATIC = [
+    [1,7,'H'],[1,8,'H'],[1,9,'H'],[1,10,'H'],
+    [2,6,'H'],[2,7,'H'],[2,8,'H'],[2,9,'H'],[2,10,'H'],[2,11,'H'],
+    [3,5,'H'],[3,6,'H'],[3,11,'H'],[3,12,'H'],
+    [3,7,'S'],[3,8,'S'],[3,9,'S'],[3,10,'S'],
+    [4,5,'H'],[4,12,'H'],
+    [4,6,'S'],[4,7,'S'],[4,8,'S'],[4,9,'S'],[4,10,'S'],[4,11,'S'],
+    [5,5,'M'],[5,6,'E'],[5,7,'S'],[5,8,'S'],[5,9,'S'],[5,10,'S'],[5,11,'E'],[5,12,'M'],
+    [6,5,'M'],[6,6,'M'],[6,7,'S'],[6,8,'S'],[6,9,'S'],[6,10,'S'],[6,11,'M'],[6,12,'M'],
+    [7,6,'S'],[7,7,'S'],[7,8,'S'],[7,9,'S'],[7,10,'S'],[7,11,'S'],
+    [8,7,'S'],[8,8,'S'],[8,9,'S'],[8,10,'S'],
+    [9,8,'S'],[9,9,'S'],
+    [10,3,'P'],[10,4,'D'],[10,13,'D'],[10,14,'P'],
+    [10,6,'B'],[10,7,'B'],[10,8,'B'],[10,9,'B'],[10,10,'B'],[10,11,'B'],
+    [11,5,'B'],[11,6,'B2'],[11,7,'B'],[11,8,'Y'],[11,9,'Y'],[11,10,'B'],[11,11,'B2'],[11,12,'B'],
+    [12,5,'B'],[12,6,'B'],[12,7,'B'],[12,8,'Y'],[12,9,'Y'],[12,10,'B'],[12,11,'B'],[12,12,'B'],
+    [13,5,'B'],[13,6,'B'],[13,7,'B'],[13,8,'B'],[13,9,'B'],[13,10,'B'],[13,11,'B'],[13,12,'B'],
+    [14,6,'B'],[14,7,'B'],[14,8,'B'],[14,9,'B'],[14,10,'B'],[14,11,'B'],
+    [15,6,'B'],[15,7,'B'],[15,8,'B'],[15,9,'B'],[15,10,'B'],[15,11,'B'],
+    [16,6,'K'],[16,7,'K'],[16,8,'K'],[16,9,'K'],[16,10,'K'],[16,11,'K']
+  ];
+
+  var FRAMES = {
+    idle: [
+      [9,2,'C2'],[10,1,'C'],[11,1,'C'],[12,1,'C'],[13,1,'C'],[14,2,'C'],[15,2,'C'],[16,3,'C2'],
+      [10,2,'C'],[11,2,'C'],[12,2,'C'],[13,2,'C'],[14,3,'C'],
+      [10,3,'D'],[11,3,'D'],[12,3,'D'],[13,3,'D'],[14,3,'S'],
+      [10,14,'B'],[11,14,'B'],[12,14,'B'],[13,14,'B'],[14,14,'S'],
+      [17,7,'D'],[18,7,'D'],[19,7,'D'],[20,7,'K'],[21,7,'K'],
+      [17,10,'D'],[18,10,'D'],[19,10,'D'],[20,10,'K'],[21,10,'K']
+    ],
+    flex: [
+      [10,2,'C2'],[11,1,'C'],[12,1,'C'],[13,2,'C'],[14,2,'C2'],
+      [11,2,'D'],[12,3,'D'],[13,3,'S'],
+      [4,14,'S'],[5,13,'B2'],[6,13,'B'],[7,13,'B'],[8,14,'B'],[9,14,'B'],[10,14,'B'],
+      [17,6,'D'],[18,6,'D'],[19,6,'D'],[20,6,'K'],[21,6,'K'],
+      [17,11,'D'],[18,11,'D'],[19,11,'D'],[20,11,'K'],[21,11,'K']
+    ],
+    fly: [
+      [8,0,'C2'],[9,0,'C'],[10,0,'C'],[11,1,'C'],[12,1,'C'],[13,2,'C'],[14,3,'C2'],
+      [9,1,'C'],[10,1,'C'],[11,2,'C'],[12,3,'C'],
+      [10,2,'D'],[11,3,'D'],[12,4,'S'],
+      [7,14,'S'],[7,13,'B2'],[8,14,'B'],[9,14,'B'],[10,14,'B'],[11,15,'B'],
+      [18,8,'D'],[19,8,'D'],[20,9,'D'],[21,9,'K'],[21,10,'K'],
+      [18,10,'D'],[19,10,'D'],[20,10,'D']
+    ],
+    land: [
+      [10,2,'C2'],[11,1,'C'],[12,1,'C'],[13,2,'C2'],
+      [11,2,'D'],[12,2,'S'],
+      [11,14,'B'],[12,14,'S'],
+      [17,4,'D'],[18,4,'D'],[19,5,'D'],[20,5,'K'],[21,5,'K'],
+      [17,13,'D'],[18,13,'D'],[19,12,'D'],[20,12,'K'],[21,12,'K']
+    ]
+  };
+
+  var ORDER = ['idle', 'flex', 'fly', 'land'];
+  var canvas = root.querySelector('#hp-canvas');
+  var ctx = canvas.getContext('2d');
+
+  function drawFrame(frameKey) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    var draw = function (list) {
+      list.forEach(function (p) {
+        var row = p[0], col = p[1], code = p[2];
+        ctx.fillStyle = PAL[code];
+        ctx.fillRect(col, row, 1, 1);
+      });
+    };
+    draw(STATIC);
+    draw(FRAMES[frameKey]);
+  }
+
+  var frameIndex = 0;
+  drawFrame(ORDER[frameIndex]);
+  setInterval(function () {
+    frameIndex = (frameIndex + 1) % ORDER.length;
+    drawFrame(ORDER[frameIndex]);
+  }, 1600);
+})();
+</script>
